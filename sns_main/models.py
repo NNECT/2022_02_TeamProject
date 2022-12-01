@@ -50,13 +50,13 @@ class MessageCard(models.Model):
     content = models.TextField()
     head_image = models.ImageField(upload_to=f'images/{author.primary_key}/', blank=True)
 
-    tag = models.ManyToManyField(Tag, related_name='tag_message')
-    link_user = models.ManyToManyField(User, related_name='link_message')
-    like_user = models.ManyToManyField(User, related_name='like_message')
-    forward_user = models.ManyToManyField(User, related_name='forward_message')
+    tag = models.ManyToManyField(Tag, related_name='tag_message', blank=True)
+    link_user = models.ManyToManyField(User, related_name='link_message', blank=True)
+    like_user = models.ManyToManyField(User, related_name='like_message', blank=True)
+    forward_user = models.ManyToManyField(User, related_name='forward_message', blank=True)
 
     def __str__(self):
-        return f'{self.pk} @{self.author}'
+        return f'{self.pk} @{self.author} created at {self.created_at}, updated at {self.updated_at}'
 
     def get_absolute_url(self):
         return f'/{self.author}/{self.pk}/'

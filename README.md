@@ -4,6 +4,7 @@ sns web app
 ## 개발환경
 - Python (3.9)
 - Django (3.2.16)
+- Bootstrap (5.2.2)
 
 ## 개발계획
 - Navbar
