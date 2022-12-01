@@ -1,5 +1,49 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    테스트
+    <div class="container-sm mt-4">
+        <div class="row row-cols-1 g-4">
+
+{#            메시지 각각 출력#}
+            {% for message_card in message_card_list %}
+                <div class="col">
+                    <div class="card">
+                        {% if message_card.head_image %}
+                            <img src="{{ message_card.head_image.url }}" class="card-img-top" alt="message card head image">
+                        {% else %}
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title" style="display: inline">{{ message_card.author.nickname }}</h5>
+                            <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}"> @{{ message_card.author.username }}</a></small></h6>
+                            <p class="card-text"><small class="text-muted">{{ message_card.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
+                            <p class="card-text">{{ message_card.content }}</p>
+                            <p class="card-text">
+                                <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment"></i> {{ message_card.reply_set.count }}</a>
+                                {% if user.is_authenticated %}
+                                    {% if uesr in message_card.like_user.all %}
+                                        <i class="fa-solid fa-heart"></i> {{ message_card.like_user.all.count }}
+                                    {% else %}
+                                        <i class="fa-regular fa-heart"></i> {{ message_card.like_user.all.count }}
+                                    {% endif %}
+                                {% else %}
+                                    <i class="fa-regular fa-heart"></i> {{ message_card.like_user.all.count }}
+                                {% endif %}
+                                {% if user.is_authenticated %}
+                                    {% if uesr in message_card.forward_user.all %}
+                                        <i class="fa-solid fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
+                                    {% else %}
+                                        <i class="fa-regular fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
+                                    {% endif %}
+                                {% else %}
+                                    <i class="fa-regular fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+
+        </div>
+    </div>
 {% endblock %}
