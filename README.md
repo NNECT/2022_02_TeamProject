@@ -28,30 +28,27 @@ sns web app
 
 ## 데이터베이스
 
-### <유저>
-- 아이디
-- 닉네임
-- 비밀번호
-- 가입일
-- 팔로우유저(ManyToManyField)
-
-### <메시지>
-- 작성유저(Foriegn Key)
-- 작성시간
-- 수정시간
-- 내용
-- 태그(ManyToManyField)
-- 유저링크(ManyToManyField)
-- 좋아요(ManyToManyField)
-- 리트윗(ManyToManyField)
-
-### <댓글>
-- 대상메시지(Foriegn Key)
-- 작성유저(Foriegn Key)
-- 작성시간
-- 수정시간
-- 내용
-
-### <태그>
-- 태그이름
-- 태그주소
+- User(AbstractUser)
+  >- username
+  >- password
+  >- nickname
+  >- follow(ManyToManyField)
+- Tag
+  >- name
+  >- slug
+- MessageCard
+  >- author (Foriegn Key → User)
+  >- created_at
+  >- updated_at
+  >- head_image
+  >- content
+  >- tag (ManyToManyField: tag_message ↔ Tag)
+  >- link_user (ManyToManyField: link_message ↔ User)
+  >- like_user (ManyToManyField: like_message ↔ User)
+  >- forward_user (ManyToManyField: forward_message ↔ User)
+- Reply
+  >- message (Foriegn Key → MessageCard)
+  >- author (Foriegn Key → User)
+  >- created_at
+  >- updated_at
+  >- content

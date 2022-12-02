@@ -31,7 +31,7 @@ class User(AbstractUser):
     follow = models.ManyToManyField('self', blank=True, related_name='follower')
 
     def __str__(self):
-        return self.nickname
+        return self.nickname + ' @' + self.username
 
 
 class Tag(models.Model):

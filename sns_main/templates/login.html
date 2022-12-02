@@ -2,36 +2,34 @@
 
 {% block content %}
     <div class="container my-3">
-        <form method="post" action="{% url 'login' %}">
-            {% csrf_token %}
-            {% if form.errors %}
-                <div class="alert alert-danger">
-                    {% for field in form %}
-                    <!-- 필드 오류 -->
-                    {% if field.errors %}
-                    <div>
-                        <strong>{{ field.label }}</strong>
-                        {{ field.errors }}
+        <form method="post" action="{% url 'login' %}"> {% csrf_token %}
+            <div class="mb-3">
+                {% if form.username.errors %}
+                    <div class="form-floating">
+                        <input type="text" class="form-control is-invalid" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
+                        <label for="username">사용자 ID</label>
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                    <!-- 넌필드 오류 -->
-                    {% for error in form.non_field_errors %}
-                    <div>
-                        <strong>{{ error }}</strong>
+                {% else %}
+                    <div class="form-floating">
+                        <input type="text" class="form-control" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
+                        <label for="username">사용자 ID</label>
                     </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            <div class="form-floating mb-3">
-                <input type="text" class="form-control" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
-                <label for="username">사용자ID</label>
+                {% endif %}
             </div>
-            <div class="form-floating mb-3">
-                <input type="password" class="form-control" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
-                <label for="password">비밀번호</label>
+            <div class="mb-3">
+                {% if form.password.errors %}
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control is-invalid" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
+                        <label for="password">비밀번호</label>
+                    </div>
+                {% else %}
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
+                        <label for="password">비밀번호</label>
+                    </div>
+                {% endif %}
             </div>
-            <button type="submit" class="btn btn-primary">로그인</button>
+            <button type="submit" class="btn btn-primary">로그인</button><a href="{% url "register" %}" class="ms-3"><small>회원가입</small></a>
         </form>
     </div>
 {% endblock %}

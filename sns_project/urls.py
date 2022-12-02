@@ -20,10 +20,13 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', views.Login.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.Register.as_view(), name='register'),
     path('', views.Timeline.as_view(), name='timeline'),
-    path('<str:username>/', views.TimelineUser.as_view(), name='timeline_user'),
+    path('user/<str:username>/', views.TimelineUser.as_view(), name='timeline_user'),
+    path('user/<str:username>/follow/', views.UserFollowList.as_view(), name='follow'),
+    path('user/<str:username>/follower/', views.UserFollowerList.as_view(), name='follower'),
+    path('tag/<str:tag_slug>/', views.TimelineTag.as_view(), name='timeline_tag'),
     path('message/<int:pk>/', views.TimelineDetail.as_view(), name='timeline_detail'),
 ]

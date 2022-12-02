@@ -3,6 +3,24 @@
 {% block content %}
     <div class="container-sm mt-4">
         <div class="row row-cols-1 g-4">
+{#            메시지 입력창#}
+            {% if user.is_authenticated and user.id == page_author.id %}
+                <div class="col">
+                    <div class="card border-light">
+                        <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                            <div class="input-group input-group-sm mb-1">
+                                <label class="input-group-text" for="inputGroupFile01">이미지 파일</label>
+                                <input type="file" class="form-control" id="formImage" accept="image/jpeg, image/png">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">메시지 입력</span>
+                                <textarea class="form-control" id="MessageCardTextBox" aria-label="With textarea" style="height: 100px"></textarea>
+                                <button class="btn btn-outline-primary" type="submit">입력</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
 
 {#            메시지 각각 출력#}
             {% for message_card in message_card_list %}
@@ -18,25 +36,33 @@
                             <p class="card-text"><small class="text-muted">{{ message_card.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
                             <p class="card-text">{{ message_card.content }}</p>
                             <p class="card-text">
-                                <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment"></i> {{ message_card.reply_set.count }}</a>
-                                {% if user.is_authenticated %}
-                                    {% if uesr in message_card.like_user.all %}
-                                        <i class="fa-solid fa-heart"></i> {{ message_card.like_user.all.count }}
+                                <div style="float: left" style="word-spacing: 15px">
+                                    <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment me-1"></i> {{ message_card.reply_set.count }}</a>
+                                    {% if user.is_authenticated %}
+                                        {% if uesr in message_card.like_user.all %}
+                                            <i class="fa-solid fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
+                                        {% else %}
+                                            <i class="fa-regular fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
+                                        {% endif %}
                                     {% else %}
-                                        <i class="fa-regular fa-heart"></i> {{ message_card.like_user.all.count }}
+                                        <i class="fa-regular fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
                                     {% endif %}
-                                {% else %}
-                                    <i class="fa-regular fa-heart"></i> {{ message_card.like_user.all.count }}
-                                {% endif %}
-                                {% if user.is_authenticated %}
-                                    {% if uesr in message_card.forward_user.all %}
-                                        <i class="fa-solid fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
+                                    {% if user.is_authenticated %}
+                                        {% if uesr in message_card.forward_user.all %}
+                                            <i class="fa-solid fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
+                                        {% else %}
+                                            <i class="fa-regular fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
+                                        {% endif %}
                                     {% else %}
-                                        <i class="fa-regular fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
+                                        <i class="fa-regular fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
                                     {% endif %}
-                                {% else %}
-                                    <i class="fa-regular fa-share-from-square"></i> {{ message_card.forward_user.all.count }}
-                                {% endif %}
+                                </div>
+                                <div style="float: right">
+                                    <small class="text-muted" style="word-spacing: 15px">
+                                        <a href="#">수정</a>
+                                        <a href="#">삭제</a>
+                                    </small>
+                                </div>
                             </p>
                         </div>
                     </div>
