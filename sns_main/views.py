@@ -58,7 +58,7 @@ class Timeline(View):
             "page_author": request.user,
             "message_card_list": MessageCard.objects.filter(
                 Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-            ).order_by("created_at"),
+            ).order_by("-created_at"),
         }
         return render(request, self.template_name, context=context)
 
@@ -69,7 +69,7 @@ class Timeline(View):
             "page_author": request.user,
             "message_card_list": MessageCard.objects.filter(
                 Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-            ).order_by("created_at"),
+            ).order_by("-created_at"),
         }
         return render(request, self.template_name, context=context)
 
@@ -83,7 +83,7 @@ class TimelineUser(View):
             "page_author": user,
             "message_card_list": MessageCard.objects.filter(
                 Q(author__id=user.id) | Q(link_user__id=user.id) | Q(forward_user__id=user.id)
-            ).order_by("created_at"),
+            ).order_by("-created_at"),
         }
         return render(request, self.template_name, context=context)
 
@@ -107,7 +107,7 @@ class TimelineDetail(View):
         pk = kwargs['pk']
         context = {
             "message_card": MessageCard.objects.get(id=pk),
-            "reply_list": Reply.objects.filter(message__id=pk),
+            "reply_list": Reply.objects.filter(message__id=pk).order_by("-created_at"),
         }
         return render(request, self.template_name, context=context)
 

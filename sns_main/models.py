@@ -1,9 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
 from django.core import validators
 from django.utils.deconstruct import deconstructible
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+import re
 
 
 @deconstructible
@@ -63,6 +64,36 @@ class MessageCard(models.Model):
 
     def get_absolute_url(self):
         return f'/message/{self.pk}/'
+
+    def get_link_users(self):
+        r = re.compile(r"@([\w\-]+)")
+        linked_usernames = r.findall(self.content)
+        try:
+            return User.objects.filter(username__in=linked_usernames)
+        except User.DoesNotExist:
+            return None
+
+    def get_tags(self):
+        r = re.compile(r"#([\w+*%~\-=/\\\^|&!]+)")
+        linked_tags = r.findall(self.content)
+        try:
+            return Tag.objects.filter(name__in=linked_tags)
+        except Tag.DoesNotExist:
+            return None
+
+    def linked_text(self):
+        linkable_users = self.get_link_users()
+        linkable_tags = self.get_tags()
+        link = {f"@{user.username}": f"<a href='/user/{user.username}/'>@{user.username}</a>" for user in linkable_users}
+        link.update(
+            {f"#{tag.name}": f"<a href='/tag/{tag.slug}/'>#{tag.name}</a>" for tag in linkable_tags}
+        )
+        text = self.content
+        for elm in link:
+            print("elm:", elm)
+            text = text.replace(elm, link[elm])
+        print("text:", text)
+        return text
 
     class Meta:
         ordering = ["created_at"]

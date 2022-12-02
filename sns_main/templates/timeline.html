@@ -34,7 +34,7 @@
                             <h5 class="card-title" style="display: inline">{{ message_card.author.nickname }}</h5>
                             <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}"> @{{ message_card.author.username }}</a></small></h6>
                             <p class="card-text"><small class="text-muted">{{ message_card.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
-                            <p class="card-text">{{ message_card.content }}</p>
+                            <p class="card-text">{{ message_card.linked_text|safe|linebreaksbr }}</p>
                             <p class="card-text">
                                 <div style="float: left" style="word-spacing: 15px">
                                     <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment me-1"></i> {{ message_card.reply_set.count }}</a>
