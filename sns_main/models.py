@@ -74,7 +74,7 @@ class MessageCard(models.Model):
             return None
 
     def get_tags(self):
-        r = re.compile(r"#([\w+*%~\-=/\\\^|&!]+)")
+        r = re.compile(r"#([\w+*%~\-=/\\\^!?]+)")
         linked_tags = r.findall(self.content)
         try:
             return Tag.objects.filter(name__in=linked_tags)
@@ -90,9 +90,7 @@ class MessageCard(models.Model):
         )
         text = self.content
         for elm in link:
-            print("elm:", elm)
             text = text.replace(elm, link[elm])
-        print("text:", text)
         return text
 
     class Meta:

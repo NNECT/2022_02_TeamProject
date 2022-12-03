@@ -78,7 +78,10 @@ class TimelineUser(View):
     template_name = "timeline.html"
 
     def get(self, request, *args, **kwargs):
-        user = User.objects.get(username=kwargs['username'])
+        try:
+            user = User.objects.get(username=kwargs['username'])
+        except User.DoesNotExist:
+            return redirect('timeline')
         context = {
             "page_author": user,
             "message_card_list": MessageCard.objects.filter(

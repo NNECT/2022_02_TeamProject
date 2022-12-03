@@ -4,56 +4,28 @@
     <div class="container my-3">
         <form method="post" action="{% url 'register' %}"> {% csrf_token %}
             <div class="mb-3">
-                {% if form.username.errors %}
-                    <div class="form-floating">
-                        <input type="text" class="form-control is-invalid" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
-                        <label for="username">사용자 ID</label>
-                    </div>
-                {% else %}
-                    <div class="form-floating">
-                        <input type="text" class="form-control" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
-                        <label for="username">사용자 ID</label>
-                    </div>
-                {% endif %}
+                <div class="form-floating">
+                    <input type="text" class="form-control{% if form.username.errors %} is-invalid{% endif %}" name="username" id="username" value="{{ form.username.value|default_if_none:'' }}" placeholder="Username">
+                    <label for="username">사용자 ID</label>
+                </div>
             </div>
             <div class="mb-3">
-                {% if form.password.errors %}
-                    <div class="form-floating">
-                        <input type="password" class="form-control is-invalid" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
-                        <label for="password">비밀번호</label>
-                    </div>
-                {% else %}
-                    <div class="form-floating">
-                        <input type="password" class="form-control" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
-                        <label for="password">비밀번호</label>
-                    </div>
-                {% endif %}
+                <div class="form-floating">
+                    <input type="password" class="form-control{% if form.password.errors %} is-invalid{% endif %}" name="password" id="password" value="{{ form.password.value|default_if_none:'' }}" placeholder="Password">
+                    <label for="password">비밀번호</label>
+                </div>
             </div>
             <div class="mb-3">
-                {% if form.re_password.errors %}
-                    <div class="form-floating">
-                        <input type="password" class="form-control is-invalid" name="re_password" id="re_password" value="{{ form.re_password.value|default_if_none:'' }}" placeholder="Password Check">
-                        <label for="re_password">비밀번호 확인</label>
-                    </div>
-                {% else %}
-                    <div class="form-floating">
-                        <input type="password" class="form-control" name="re_password" id="re_password" value="{{ form.re_password.value|default_if_none:'' }}" placeholder="Password Check">
-                        <label for="re_password">비밀번호 확인</label>
-                    </div>
-                {% endif %}
+                <div class="form-floating">
+                    <input type="password" class="form-control{% if form.re_password.errors %} is-invalid{% endif %}" name="re_password" id="re_password" value="{{ form.re_password.value|default_if_none:'' }}" placeholder="Password Check">
+                    <label for="re_password">비밀번호 확인</label>
+                </div>
             </div>
             <div class="mb-3">
-                {% if form.nickname.errors %}
-                    <div class="form-floating">
-                        <input type="text" class="form-control is-invalid" name="nickname" id="nickname" value="{{ form.nickname.value|default_if_none:'' }}" placeholder="Nickname">
-                        <label for="username">사용자 닉네임</label>
-                    </div>
-                {% else %}
-                    <div class="form-floating">
-                        <input type="text" class="form-control" name="nickname" id="nickname" value="{{ form.nickname.value|default_if_none:'' }}" placeholder="Nickname">
-                        <label for="username">사용자 닉네임</label>
-                    </div>
-                {% endif %}
+                <div class="form-floating">
+                    <input type="text" class="form-control{% if form.nickname.errors %} is-invalid{% endif %}" name="nickname" id="nickname" value="{{ form.nickname.value|default_if_none:'' }}" placeholder="Nickname">
+                    <label for="username">사용자 닉네임</label>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">회원가입</button>
         </form>

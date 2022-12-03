@@ -1,5 +1,143 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    {{ message_card.content }}
+    <div class="container-sm mt-4">
+        <div class="row row-cols-1 g-4">
+            <div class="col">
+                <div class="card">
+                    {% if message_card.head_image %}
+                        <img src="{{ message_card.head_image.url }}" class="card-img-top" alt="message card head image">
+                    {% else %}
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title" style="display: inline">{{ message_card.author.nickname }}</h5>
+                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}"> @{{ message_card.author.username }}</a></small></h6>
+                        {% if user.is_authenticated and user != message_card.author %}
+                            <span style="float: right"><a href="">
+                                {% if message_card.author in user.follow.all %}
+                                    <i class="fa-solid fa-heart ms-3 me-1"></i>
+                                {% else %}
+                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
+                                {% endif %}
+                            </a></span>
+                        {% endif %}
+                        <p class="card-text"><small class="text-muted">{{ message_card.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
+                        <p class="card-text">{{ message_card.linked_text|safe|linebreaksbr }}</p>
+                        <p class="card-text">
+                            <span style="float: left">
+                                <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment me-1"></i> {{ message_card.reply_set.count }}</a>
+                                {% if user.is_authenticated %}
+                                    <a href="">
+                                        {% if uesr in message_card.like_user.all %}
+                                            <i class="fa-solid fa-heart ms-3 me-1"></i>
+                                        {% else %}
+                                            <i class="fa-regular fa-heart ms-3 me-1"></i>
+                                        {% endif %}
+                                    </a>
+                                {% else %}
+                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
+                                {% endif %} {{ message_card.like_user.all.count }}
+                                {% if user.is_authenticated %}
+                                    <a href="">
+                                        {% if uesr in message_card.forward_user.all %}
+                                            <i class="fa-solid fa-share-from-square ms-3 me-1"></i>
+                                        {% else %}
+                                            <i class="fa-regular fa-share-from-square ms-3 me-1"></i>
+                                        {% endif %}
+                                    </a>
+                                {% else %}
+                                    <i class="fa-regular fa-share-from-square ms-3 me-1"></i>
+                                {% endif %} {{ message_card.forward_user.all.count }}
+                            </span>
+                            <span style="float: right">
+                                <small class="text-muted" style="word-spacing: 15px">
+                                    {% if user.is_authenticated and user == message_card.author %}
+                                        <a href="#collapse{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapse{{ message_card.id }}">수정</a>
+                                        <a href="#delete{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="delete{{ message_card.id }}">삭제</a>
+                                    {% endif %}
+                                </small>
+                            </span>
+                        </p>
+                    </div>
+
+
+    {#                메시지 수정#}
+                    {% if user.is_authenticated and user == message_card.author %}
+                        <div class="card-body collapse" id="collapse{{ message_card.id }}">
+                            <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                <div class="input-group input-group-sm mb-1">
+                                    <label class="input-group-text" for="Message{{ message_card.id }}Image">이미지 파일</label>
+                                    <input type="file" class="form-control" id="Message{{ message_card.id }}Image" accept="image/jpeg, image/png">
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">메시지 입력</span>
+                                    <textarea class="form-control" id="Message{{ message_card.id }}TextBox" name="Message{{ message_card.id }}TextBox" aria-label="With textarea" style="height: 100px">{{ message_card.content|safe }}</textarea>
+                                    <button class="btn btn-outline-primary" type="submit">수정</button>
+                                </div>
+                            </form>
+                        </div>
+
+    {#                메시지 삭제#}
+                        <div class="card-body collapse" id="delete{{ message_card.id }}">
+                            <div class="alert alert-danger" role="alert">
+                                정말 삭제할까요?
+                                <span style="float: right"><a href="">예</a></span>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+
+            {% if user.is_authenticated or reply_list %}
+                <div class="col">
+                    <div class="card">
+                        {% if user.is_authenticated %}
+                            <div class="card-body">
+                                <h5 class="card-title" style="display: inline">{{ user.nickname }}</h5>
+                                <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=user.username %}"> @{{ user.username }}</a></small></h6>
+                            </div>
+
+                {#            메시지 입력창#}
+                            <div class="card-body">
+                                <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                    <div class="input-group">
+                                        <span class="input-group-text">댓글 입력</span>
+                                        <textarea class="form-control" id="MessageCardTextBox" aria-label="With textarea" style="height: 100px"></textarea>
+                                        <button class="btn btn-outline-primary" type="submit">작성</button>
+                                    </div>
+                                </form>
+                            </div>
+                        {% endif %}
+
+                        <ul class="list-group list-group-flush">
+                            {% if reply_list %}
+                                {% for reply in reply_list %}
+                                    <li class="list-group-item">
+                                        <h5 class="card-title" style="display: inline">{{ reply.author.nickname }}</h5>
+                                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=reply.author.username %}"> @{{ reply.author.username }}</a></small></h6>
+                                        {% if user.is_authenticated and user != reply.author %}
+                                            <span style="float: right"><a href="">
+                                                {% if reply.author in user.follow.all %}
+                                                    <i class="fa-solid fa-heart ms-3 me-1"></i>
+                                                {% else %}
+                                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
+                                                {% endif %}
+                                            </a></span>
+                                        {% endif %}
+                                        <p class="card-text"><small class="text-muted">{{ reply.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
+                                        <p class="card-text">{{ reply.content|safe|linebreaksbr }}</p>
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="list-group-item text-center">
+                                    <small class="text-muted">아직 댓글이 없습니다</small>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

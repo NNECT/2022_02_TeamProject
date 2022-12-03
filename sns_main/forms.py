@@ -67,3 +67,9 @@ class RegisterForm(forms.Form):
                 user.save()
         else:
             self.add_error('password', '잘못된 비밀번호입니다.')
+
+
+class TimelineForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(TimelineForm, self).__init__(*args, **kwargs)

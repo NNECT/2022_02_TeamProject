@@ -13,7 +13,7 @@
         {% block headscript %} {% endblock %}
     </head>
 
-    <body>
+    <body class="d-flex flex-column min-vh-100">
         <nav class="navbar navbar-expand-sm bg-light">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{% url "timeline" %}"><i class="fa-solid fa-comment-sms"></i> 톡</a>
@@ -45,7 +45,15 @@
                 </div>
             </div>
         </nav>
+
+
         {% block content %} {% endblock %}
+
+
+        <p></p>
+        <footer class="py-3 bg-light mt-auto">
+            <p class="text-center text-muted">2022-2 Team Project: 이어진 이상연 송주연</p>
+        </footer>
     </body>
 
     {% block otherscript %} {% endblock %}
