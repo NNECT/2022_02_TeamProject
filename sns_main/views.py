@@ -65,11 +65,48 @@ class Timeline(View):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
+        if request.POST["form_type"] == "insert_message":
+            form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+            if form.is_valid():
+                m = form.save(commit=False)
+                m.author = request.user
+                m.save()
+                link_users = m.get_link_users()
+                for link_user in link_users:
+                    m.link_user.add(link_user)
+                tags = m.get_tags()
+                addable_tags = m.get_addable_tags()
+                for tag in tags:
+                    m.tag.add(tag)
+                for tag in addable_tags:
+                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    m.tag.add(t)
+        else:
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_type"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=m)
+                m = form.save()
+                m.link_user.clear()
+                link_users = m.get_link_users()
+                for link_user in link_users:
+                    m.link_user.add(link_user)
+                m.tag.clear()
+                tags = m.get_tags()
+                addable_tags = m.get_addable_tags()
+                for tag in tags:
+                    m.tag.add(tag)
+                for tag in addable_tags:
+                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    m.tag.add(t)
         context = {
             "page_author": request.user,
             "message_card_list": MessageCard.objects.filter(
                 Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-            ).order_by("-created_at"),
+            ),
         }
         return render(request, self.template_name, context=context)
 
@@ -79,14 +116,28 @@ class TimelineUser(View):
 
     def get(self, request, *args, **kwargs):
         try:
-            user = User.objects.get(username=kwargs['username'])
+            page_author = User.objects.get(username=kwargs['username'])
         except User.DoesNotExist:
             return redirect('timeline')
         context = {
-            "page_author": user,
+            "page_author": page_author,
             "message_card_list": MessageCard.objects.filter(
-                Q(author__id=user.id) | Q(link_user__id=user.id) | Q(forward_user__id=user.id)
-            ).order_by("-created_at"),
+                Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
+            ),
+        }
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            page_author = User.objects.get(username=kwargs['username'])
+        except User.DoesNotExist:
+            return redirect('timeline')
+        form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+        context = {
+            "page_author": page_author,
+            "message_card_list": MessageCard.objects.filter(
+                Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
+            ),
         }
         return render(request, self.template_name, context=context)
 
@@ -97,8 +148,16 @@ class TimelineTag(View):
     def get(self, request, *args, **kwargs):
         tag_slug = kwargs['tag_slug']
         context = {
-            "page_author": "",
-            "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug).order_by("created_at"),
+            "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug),
+        }
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        tag_slug = kwargs['tag_slug']
+        form = TimelineForm(data=request.POST, user=request.user)
+        context = {
+            "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug),
+            "form": form,
         }
         return render(request, self.template_name, context=context)
 
@@ -110,7 +169,7 @@ class TimelineDetail(View):
         pk = kwargs['pk']
         context = {
             "message_card": MessageCard.objects.get(id=pk),
-            "reply_list": Reply.objects.filter(message__id=pk).order_by("-created_at"),
+            "reply_list": Reply.objects.filter(message__id=pk),
         }
         return render(request, self.template_name, context=context)
 

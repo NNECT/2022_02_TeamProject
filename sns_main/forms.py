@@ -69,7 +69,94 @@ class RegisterForm(forms.Form):
             self.add_error('password', '잘못된 비밀번호입니다.')
 
 
-class TimelineForm(forms.Form):
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop("user")
+# class TimelineForm(forms.Form):
+#     form_type = forms.CharField()
+#     form_image = forms.ImageField(allow_empty_file=True)
+#     form_message = forms.CharField(widget=forms.Textarea)
+#
+#     def __init__(self, *args, **kwargs):
+#         self.user = kwargs.pop("user")
+#         super(TimelineForm, self).__init__(*args, **kwargs)
+#
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         form_type = cleaned_data.get("form_type")
+#         form_image = cleaned_data.get("form_image")
+#         form_message = cleaned_data.get("form_message")
+#
+#         if str(form_type) == "insert_message":
+#             if form_message:
+#                 if form_image:
+#                     new_message = MessageCard(
+#                         author=self.user,
+#                         head_image=form_image,
+#                         content=form_message,
+#                     )
+#                 else:
+#                     new_message = MessageCard(
+#                         author=self.user,
+#                         content=form_message,
+#                     )
+#                 new_message.save()
+#                 linked_users = new_message.get_link_users()
+#                 if linked_users:
+#                     new_message.link_user.set(new_message.get_link_users())
+#                 tags = new_message.get_tags()
+#                 addable_tags = new_message.get_addable_tags()
+#                 if tags:
+#                     for tag in tags:
+#                         new_message.tag.add(tag)
+#                 if addable_tags:
+#                     for tag in addable_tags:
+#                         Tag(name=tag).save()
+#                         new_tag = Tag.objects.get(name=tag)
+#                         new_message.tag.add(new_tag)
+#                 return self.cleaned_data
+#             else:
+#                 self.add_error("form_message", "메시지가 비어있습니다.")
+#                 print("메시지가 비어있습니다.")
+#         elif str(form_type).startswith("modify_message"):
+#             for _ in [0]:
+#                 try:
+#                     target_message = MessageCard.objects.get(id=int(str(form_type).replace("modify_message_", "")))
+#                 except ValueError:
+#                     self.add_error("form_type", "대상 메시지 ID를 읽을 수 없습니다.")
+#                     print("대상 메시지 ID를 읽을 수 없습니다.")
+#                     break
+#                 except MessageCard.DoesNotExist:
+#                     self.add_error("form_type", "대상 메시지가 존재하지 않습니다.")
+#                     print("대상 메시지가 존재하지 않습니다.")
+#                     break
+#                 if form_image:
+#                     target_message.head_image = form_image
+#                 if target_message.content != form_message:
+#                     target_message.content = form_message
+#                 target_message.save()
+#                 linked_users = target_message.get_link_users()
+#                 if linked_users:
+#                     target_message.link_user.set(target_message.get_link_users())
+#                 tags = target_message.get_tags()
+#                 addable_tags = target_message.get_addable_tags()
+#                 target_message.tag.clear()
+#                 if tags:
+#                     for tag in tags:
+#                         target_message.tag.add(tag)
+#                 if addable_tags:
+#                     for tag in addable_tags:
+#                         Tag(name=tag).save()
+#                         new_tag = Tag.objects.get(name=tag)
+#                         target_message.tag.add(new_tag)
+#                 return self.cleaned_data
+#         else:
+#             self.add_error("form_type", "잘못된 요청입니다.")
+#             print("잘못된 요청입니다.")
+
+class TimelineForm(forms.ModelForm):
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
         super(TimelineForm, self).__init__(*args, **kwargs)
+        self.fields['head_image'].required = False
+
+    class Meta:
+        model = MessageCard
+        fields = ('head_image', 'content')

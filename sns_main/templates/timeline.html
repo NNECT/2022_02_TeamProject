@@ -22,14 +22,18 @@
         {#            메시지 입력창#}
                     {% if user.is_authenticated and user.id == page_author.id %}
                         <div class="card-body">
-                            <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                            <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                <div class="btn-group invisible" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_type" value="insert_message" id="insert_message" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="insert_message">작성</label>
+                                </div>
                                 <div class="input-group input-group-sm mb-1">
-                                    <label class="input-group-text" for="formImage">이미지 파일</label>
-                                    <input type="file" class="form-control" id="formImage" accept="image/jpeg, image/png">
+                                    <label class="input-group-text" for="form_image">이미지 파일</label>
+                                    <input type="file" class="form-control" name="head_image" id="form_image" accept="image/jpeg, image/png">
                                 </div>
                                 <div class="input-group">
                                     <span class="input-group-text">메시지 입력</span>
-                                    <textarea class="form-control" id="MessageCardTextBox" aria-label="With textarea" style="height: 100px"></textarea>
+                                    <textarea class="form-control" name="content" id="form_message" aria-label="With textarea" style="height: 100px"></textarea>
                                     <button class="btn btn-outline-primary" type="submit">작성</button>
                                 </div>
                             </form>
@@ -99,14 +103,18 @@
         {#                메시지 수정#}
                         {% if user.is_authenticated and user == message_card.author %}
                             <div class="card-body collapse" id="collapse{{ message_card.id }}">
-                                <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                    <div class="btn-group invisible" role="group" aria-label="Basic radio toggle button group">
+                                        <input type="radio" class="btn-check" name="form_type" value="{{ message_card.id }}" id="modify_message_{{ message_card.id }}" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary" for="modify_message_{{ message_card.id }}">작성</label>
+                                    </div>
                                     <div class="input-group input-group-sm mb-1">
-                                        <label class="input-group-text" for="Message{{ message_card.id }}Image">이미지 파일</label>
-                                        <input type="file" class="form-control" id="Message{{ message_card.id }}Image" accept="image/jpeg, image/png">
+                                        <label class="input-group-text" for="form_image_{{ message_card.id }}">이미지 파일</label>
+                                        <input type="file" class="form-control" name="head_image" id="form_image_{{ message_card.id }}" accept="image/jpeg, image/png">
                                     </div>
                                     <div class="input-group">
                                         <span class="input-group-text">메시지 입력</span>
-                                        <textarea class="form-control" id="Message{{ message_card.id }}TextBox" name="Message{{ message_card.id }}TextBox" aria-label="With textarea" style="height: 100px">{{ message_card.content|safe }}</textarea>
+                                        <textarea class="form-control" name="content" id="form_message_{{ message_card.id }}" aria-label="With textarea" style="height: 100px">{{ message_card.content|safe }}</textarea>
                                         <button class="btn btn-outline-primary" type="submit">수정</button>
                                     </div>
                                 </form>

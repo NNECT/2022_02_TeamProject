@@ -71,10 +71,24 @@ class MessageCard(models.Model):
         try:
             return User.objects.filter(username__in=linked_usernames)
         except User.DoesNotExist:
-            return None
+            return []
+
+    def get_addable_tags(self):
+        r = re.compile(r"#([\w\-~ㄱ-ㅎ가-힣ㅏ-ㅣ]+)")
+        linked_tags = r.findall(self.content)
+        addable_tags = []
+        for tag in linked_tags:
+            try:
+                if Tag.objects.get(slug=slugify(tag, allow_unicode=True)):
+                    continue
+                else:
+                    addable_tags.append(tag)
+            except Tag.DoesNotExist:
+                addable_tags.append(tag)
+        return addable_tags
 
     def get_tags(self):
-        r = re.compile(r"#([\w+*%~\-=/\\\^!?]+)")
+        r = re.compile(r"#([\w\-~ㄱ-ㅎ가-힣ㅏ-ㅣ]+)")
         linked_tags = r.findall(self.content)
         try:
             return Tag.objects.filter(name__in=linked_tags)
@@ -94,7 +108,7 @@ class MessageCard(models.Model):
         return text
 
     class Meta:
-        ordering = ["created_at"]
+        ordering = ["-created_at"]
 
 
 class Reply(models.Model):
