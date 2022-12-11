@@ -81,27 +81,39 @@ class Timeline(View):
                 for tag in addable_tags:
                     t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
                     m.tag.add(t)
-        else:
+                redirect(request.path)
+        elif request.POST["form_type"] == "modify_message":
             for _ in [0]:
                 try:
-                    message_id = int(request.POST["form_type"])
+                    message_id = int(request.POST["form_id"])
                     m = MessageCard.objects.get(id=message_id)
                 except ValueError:
                     break
                 form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=m)
-                m = form.save()
-                m.link_user.clear()
-                link_users = m.get_link_users()
-                for link_user in link_users:
-                    m.link_user.add(link_user)
-                m.tag.clear()
-                tags = m.get_tags()
-                addable_tags = m.get_addable_tags()
-                for tag in tags:
-                    m.tag.add(tag)
-                for tag in addable_tags:
-                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
-                    m.tag.add(t)
+                if form.is_valid():
+                    m = form.save()
+                    m.link_user.clear()
+                    link_users = m.get_link_users()
+                    for link_user in link_users:
+                        m.link_user.add(link_user)
+                    m.tag.clear()
+                    tags = m.get_tags()
+                    addable_tags = m.get_addable_tags()
+                    for tag in tags:
+                        m.tag.add(tag)
+                    for tag in addable_tags:
+                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        m.tag.add(t)
+                    redirect(request.path)
+        elif request.POST["form_type"] == "delete_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                m.delete()
+                redirect(request.path)
         context = {
             "page_author": request.user,
             "message_card_list": MessageCard.objects.filter(
@@ -132,7 +144,55 @@ class TimelineUser(View):
             page_author = User.objects.get(username=kwargs['username'])
         except User.DoesNotExist:
             return redirect('timeline')
-        form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+        if request.POST["form_type"] == "insert_message":
+            form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+            if form.is_valid():
+                m = form.save(commit=False)
+                m.author = request.user
+                m.save()
+                link_users = m.get_link_users()
+                for link_user in link_users:
+                    m.link_user.add(link_user)
+                tags = m.get_tags()
+                addable_tags = m.get_addable_tags()
+                for tag in tags:
+                    m.tag.add(tag)
+                for tag in addable_tags:
+                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    m.tag.add(t)
+                redirect(request.path)
+        elif request.POST["form_type"] == "modify_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=m)
+                if form.is_valid():
+                    m = form.save()
+                    m.link_user.clear()
+                    link_users = m.get_link_users()
+                    for link_user in link_users:
+                        m.link_user.add(link_user)
+                    m.tag.clear()
+                    tags = m.get_tags()
+                    addable_tags = m.get_addable_tags()
+                    for tag in tags:
+                        m.tag.add(tag)
+                    for tag in addable_tags:
+                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        m.tag.add(t)
+                    redirect(request.path)
+        elif request.POST["form_type"] == "delete_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                m.delete()
+                redirect(request.path)
         context = {
             "page_author": page_author,
             "message_card_list": MessageCard.objects.filter(
@@ -154,10 +214,57 @@ class TimelineTag(View):
 
     def post(self, request, *args, **kwargs):
         tag_slug = kwargs['tag_slug']
-        form = TimelineForm(data=request.POST, user=request.user)
+        if request.POST["form_type"] == "insert_message":
+            form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+            if form.is_valid():
+                m = form.save(commit=False)
+                m.author = request.user
+                m.save()
+                link_users = m.get_link_users()
+                for link_user in link_users:
+                    m.link_user.add(link_user)
+                tags = m.get_tags()
+                addable_tags = m.get_addable_tags()
+                for tag in tags:
+                    m.tag.add(tag)
+                for tag in addable_tags:
+                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    m.tag.add(t)
+                redirect(request.path)
+        elif request.POST["form_type"] == "modify_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=m)
+                if form.is_valid():
+                    m = form.save()
+                    m.link_user.clear()
+                    link_users = m.get_link_users()
+                    for link_user in link_users:
+                        m.link_user.add(link_user)
+                    m.tag.clear()
+                    tags = m.get_tags()
+                    addable_tags = m.get_addable_tags()
+                    for tag in tags:
+                        m.tag.add(tag)
+                    for tag in addable_tags:
+                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        m.tag.add(t)
+                    redirect(request.path)
+        elif request.POST["form_type"] == "delete_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                m.delete()
+                redirect(request.path)
         context = {
             "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug),
-            "form": form,
         }
         return render(request, self.template_name, context=context)
 
@@ -167,6 +274,52 @@ class TimelineDetail(View):
 
     def get(self, request, *args, **kwargs):
         pk = kwargs['pk']
+        context = {
+            "message_card": MessageCard.objects.get(id=pk),
+            "reply_list": Reply.objects.filter(message__id=pk),
+        }
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        pk = kwargs['pk']
+        for _ in [0]:
+            try:
+                card = MessageCard.objects.get(id=pk)
+            except MessageCard.DoesNotExist:
+                break
+            if request.POST["form_type"] == "modify_message":
+                form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=card)
+                if form.is_valid():
+                    m = form.save()
+                    m.link_user.clear()
+                    link_users = m.get_link_users()
+                    for link_user in link_users:
+                        m.link_user.add(link_user)
+                    m.tag.clear()
+                    tags = m.get_tags()
+                    addable_tags = m.get_addable_tags()
+                    for tag in tags:
+                        m.tag.add(tag)
+                    for tag in addable_tags:
+                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        m.tag.add(t)
+            elif request.POST["form_type"] == "insert_reply":
+                form = ReplyForm(data=request.POST, files=request.FILES, user=request.user, message=card)
+                if form.is_valid():
+                    m = form.save(commit=False)
+                    m.message = card
+                    m.author = request.user
+                    m.save()
+            else:
+                for _ in [0]:
+                    try:
+                        reply_id = int(request.POST["form_type"])
+                        reply = Reply.objects.get(id=reply_id)
+                    except ValueError:
+                        break
+                    form = ReplyForm(data=request.POST, files=request.FILES, user=request.user, message=card, instance=reply)
+                    if form.is_valid():
+                        m = form.save()
         context = {
             "message_card": MessageCard.objects.get(id=pk),
             "reply_list": Reply.objects.filter(message__id=pk),

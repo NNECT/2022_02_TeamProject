@@ -11,7 +11,7 @@
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title" style="display: inline">{{ message_card.author.nickname }}</h5>
-                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}"> @{{ message_card.author.username }}</a></small></h6>
+                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}">@{{ message_card.author.username }}</a></small></h6>
                         {% if user.is_authenticated and user != message_card.author %}
                             <span style="float: right"><a href="">
                                 {% if message_card.author in user.follow.all %}
@@ -64,14 +64,18 @@
     {#                메시지 수정#}
                     {% if user.is_authenticated and user == message_card.author %}
                         <div class="card-body collapse" id="collapse{{ message_card.id }}">
-                            <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                            <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                <div class="btn-group invisible" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_type" value="modify_message" id="modify_message_{{ message_card.id }}" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="modify_message_{{ message_card.id }}">작성</label>
+                                </div>
                                 <div class="input-group input-group-sm mb-1">
-                                    <label class="input-group-text" for="Message{{ message_card.id }}Image">이미지 파일</label>
-                                    <input type="file" class="form-control" id="Message{{ message_card.id }}Image" accept="image/jpeg, image/png">
+                                    <label class="input-group-text" for="form_image_{{ message_card.id }}">이미지 파일</label>
+                                    <input type="file" class="form-control" name="head_image" id="form_image_{{ message_card.id }}" accept="image/jpeg, image/png">
                                 </div>
                                 <div class="input-group">
                                     <span class="input-group-text">메시지 입력</span>
-                                    <textarea class="form-control" id="Message{{ message_card.id }}TextBox" name="Message{{ message_card.id }}TextBox" aria-label="With textarea" style="height: 100px">{{ message_card.content|safe }}</textarea>
+                                    <textarea class="form-control" name="content" id="form_message_{{ message_card.id }}" aria-label="With textarea" style="height: 100px">{{ message_card.content|safe }}</textarea>
                                     <button class="btn btn-outline-primary" type="submit">수정</button>
                                 </div>
                             </form>
@@ -92,24 +96,6 @@
             {% if user.is_authenticated or reply_list %}
                 <div class="col">
                     <div class="card">
-                        {% if user.is_authenticated %}
-                            <div class="card-body">
-                                <h5 class="card-title" style="display: inline">{{ user.nickname }}</h5>
-                                <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=user.username %}"> @{{ user.username }}</a></small></h6>
-                            </div>
-
-                {#            메시지 입력창#}
-                            <div class="card-body">
-                                <form action="{% url "timeline" %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-                                    <div class="input-group">
-                                        <span class="input-group-text">댓글 입력</span>
-                                        <textarea class="form-control" id="MessageCardTextBox" aria-label="With textarea" style="height: 100px"></textarea>
-                                        <button class="btn btn-outline-primary" type="submit">작성</button>
-                                    </div>
-                                </form>
-                            </div>
-                        {% endif %}
-
                         <ul class="list-group list-group-flush">
                             {% if reply_list %}
                                 {% for reply in reply_list %}
@@ -135,6 +121,28 @@
                                 </li>
                             {% endif %}
                         </ul>
+
+                        {% if user.is_authenticated %}
+                            <div class="card-body">
+                                <h5 class="card-title" style="display: inline">{{ user.nickname }}</h5>
+                                <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=user.username %}">@{{ user.username }}</a></small></h6>
+{#                            </div>#}
+{##}
+                {#            댓글 입력창#}
+{#                            <div class="card-body">#}
+                                <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                    <div class="btn-group invisible" role="group" aria-label="Basic radio toggle button group">
+                                        <input type="radio" class="btn-check" name="form_type" value="insert_reply" id="insert_reply" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary" for="insert_reply">작성</label>
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text">댓글 입력</span>
+                                        <textarea class="form-control" name="content" id="MessageCardTextBox" aria-label="With textarea" style="height: 100px"></textarea>
+                                        <button class="btn btn-outline-primary" type="submit">작성</button>
+                                    </div>
+                                </form>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}
