@@ -1,11 +1,14 @@
 import json
+import math
+
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import View, FormView
-from django.contrib.auth import authenticate, login
+
 from .forms import *
 from .models import *
 
@@ -117,11 +120,16 @@ class Timeline(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
+        data_list = MessageCard.objects.filter(
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
             "page_author": request.user,
-            "message_card_list": MessageCard.objects.filter(
-                Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-            ).order_by("-created_at"),
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -179,11 +187,17 @@ class Timeline(View):
                     break
                 m.delete()
                 return redirect(request.path)
+
+        data_list = MessageCard.objects.filter(
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
             "page_author": request.user,
-            "message_card_list": MessageCard.objects.filter(
-                Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-            ),
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -196,11 +210,17 @@ class TimelineUser(View):
             page_author = User.objects.get(username=kwargs['username'])
         except User.DoesNotExist:
             return redirect('timeline')
+
+        data_list = MessageCard.objects.filter(
+            Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
             "page_author": page_author,
-            "message_card_list": MessageCard.objects.filter(
-                Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
-            ),
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -260,11 +280,17 @@ class TimelineUser(View):
                     break
                 m.delete()
                 return redirect(request.path)
+
+        data_list = MessageCard.objects.filter(
+            Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
             "page_author": page_author,
-            "message_card_list": MessageCard.objects.filter(
-                Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
-            ),
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -274,9 +300,15 @@ class TimelineTag(View):
 
     def get(self, request, *args, **kwargs):
         pk = kwargs['pk']
+
+        data_list = MessageCard.objects.filter(tag__id=pk)
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
-            "tag_page": True,
-            "message_card_list": MessageCard.objects.filter(tag__id=pk),
+            "page_tag_id": pk,
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -333,9 +365,15 @@ class TimelineTag(View):
                     break
                 m.delete()
                 return redirect(request.path)
+
+        data_list = MessageCard.objects.filter(tag__id=pk)
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
         context = {
-            "tag_page": True,
-            "message_card_list": MessageCard.objects.filter(tag__id=pk),
+            "page_tag_id": pk,
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
         }
         return render(request, self.template_name, context=context)
 
@@ -510,5 +548,169 @@ def card_forward(request):
     context = {
         "forwarded_chk": chk,
         "forward_count": card.forward_user.all().count(),
+    }
+    return HttpResponse(json.dumps(context), content_type="application/json")
+
+
+@require_POST
+def load_new_content(request):
+    here_path = request.POST.get('here_path', None)
+    data_type = request.POST.get('data_type', None)
+    pk = request.POST.get('pk', None)
+    page = int(request.POST.get('page', None))
+
+    if data_type == "user":
+        message_card_list = MessageCard.objects.filter(
+            Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk)
+        )
+    else:
+        message_card_list = MessageCard.objects.filter(tag__id=pk)
+
+    size = message_card_list.count()
+    if size > page * 10:
+        message_card_list = message_card_list[(page - 1) * 10:page * 10]
+    elif size > (page - 1) * 10:
+        message_card_list = message_card_list[(page - 1) * 10:size]
+    else:
+        message_card_list = []
+
+    data_list = []
+    for message_card in message_card_list:
+        data = '''
+            <div class="col">
+                <div class="card">
+        '''
+        if message_card.head_image:
+            data += f'''
+                    <img src="{ message_card.head_image.url }" class="card-img-top" alt="message card head image">
+            '''
+        data += f'''
+                    <div class="card-body">
+                        <h5 class="card-title" style="display: inline">{ message_card.author.nickname }</h5>
+                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="/user/{ message_card.author.username }/"> @{ message_card.author.username }</a></small></h6>
+        '''
+        if request.user.is_authenticated and request.user != message_card.author:
+            data += f'''
+                            <span style="float: right"><a href="" class="follow_button" id="follow_button_{ message_card.id }">
+            '''
+            if message_card.author in request.user.follow.all():
+                data += f'''
+                                    <i class="fa-solid fa-heart ms-3 me-1"></i>
+                '''
+            else:
+                data += f'''
+                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
+                '''
+            data += f'''
+                            </a></span>
+            '''
+        elif request.user.is_authenticated and request.user == message_card.author:
+            data += f'''
+                            <span style="float: right">
+                                <small class="text-muted" style="word-spacing: 15px">
+                                        <a href="#collapse{ message_card.id }" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapse{ message_card.id }">수정</a>
+                                        <a href="#delete{ message_card.id }" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="delete{ message_card.id }">삭제</a>
+                                </small>
+                            </span>
+            '''
+        text = message_card.linked_text().replace("\n", "<br>")
+        data += f'''
+                        <p class="card-text"><small class="text-muted">{ message_card.created_at.strftime('%Y년 %m월 %d일 %H시 %M분') }</small></p>
+                        <p class="card-text">{ text }</p>
+                        <p class="card-text">
+                            <a href="/message/{ message_card.id }/"><i class="fa-solid fa-comment me-1"></i> { message_card.reply_set.count() }</a>
+        '''
+        if request.user.is_authenticated and request.user != message_card.author:
+            data += f'''
+                                <a href="" class="like_button" id="like_button_{ message_card.id }">
+            '''
+            if request.user in message_card.like_user.all():
+                data += f'''
+                                        <i class="fa-solid fa-heart ms-3 me-1"></i> { message_card.like_user.count() }
+                '''
+            else:
+                data += f'''
+                                        <i class="fa-regular fa-heart ms-3 me-1"></i> { message_card.like_user.count() }
+                '''
+            data += f'''
+                                </a>
+            '''
+        else:
+            data += f'''
+                                <i class="fa-regular fa-heart ms-3 me-1"></i> { message_card.like_user.count() }
+            '''
+        if request.user.is_authenticated and request.user != message_card.author:
+            data += f'''
+                                <a href="" class="forward_button" id="forward_button_{ message_card.id }">
+            '''
+            if request.user in message_card.forward_user.all():
+                data += f'''
+                                        <i class="fa-solid fa-share-from-square ms-3 me-1"></i> { message_card.forward_user.count() }
+                '''
+            else:
+                data += f'''
+                                        <i class="fa-regular fa-share-from-square ms-3 me-1"></i> { message_card.forward_user.count() }
+                '''
+            data += f'''
+                                </a>
+            '''
+        else:
+            data += f'''
+                                <i class="fa-regular fa-share-from-square ms-3 me-1"></i> { message_card.forward_user.count() }
+            '''
+        data += f'''
+                        </p>
+                    </div>
+        '''
+        text = message_card.content
+        if request.user.is_authenticated and request.user == message_card.author:
+            data += f'''
+                        <div class="card-body collapse" id="collapse{ message_card.id }">
+                            <form class="new_form_{ page }" action="{ here_path }" method="post" enctype="multipart/form-data">
+                                <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_type" value="modify_message" id="modify_message_{ message_card.id }" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="modify_message_{ message_card.id }">작성</label>
+                                </div>
+                                <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_id" value="{ message_card.id }" id="modify_message_target_{ message_card.id }" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="modify_message_target_{ message_card.id }">작성</label>
+                                </div>
+                                <div class="input-group input-group-sm mb-1">
+                                    <label class="input-group-text" for="form_image_{ message_card.id }">이미지 파일</label>
+                                    <input type="file" class="form-control" name="head_image" id="form_image_{ message_card.id }" accept="image/jpeg, image/png">
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">메시지 입력</span>
+                                    <textarea class="form-control" name="content" id="form_message_{ message_card.id }" aria-label="With textarea" style="height: 100px">{ text }</textarea>
+                                    <button class="btn btn-outline-primary" type="submit">수정</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card-body collapse" id="delete{ message_card.id }">
+                            <form class="new_form_{ page }" id="delete_form_{ message_card.id }" action="{ here_path }" method="post" enctype="multipart/form-data">
+                                <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_type" value="delete_message" id="delete_message_{ message_card.id }" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="delete_message_{ message_card.id }">작성</label>
+                                </div>
+                                <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="form_id" value="{ message_card.id }" id="delete_message_target_{ message_card.id }" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="delete_message_target_{ message_card.id }">작성</label>
+                                </div>
+                                <div class="alert alert-danger" role="alert">
+                                    정말 삭제할까요?
+                                    <span style="float: right"><a href="javascript:document.getElementById('delete_form_{ message_card.id }').submit();">예</a></span>
+                                </div>
+                            </form>
+                        </div>
+            '''
+        data += f'''
+                </div>
+            </div>
+        '''
+        data_list.append(data)
+
+    context = {
+        "data_list": data_list
     }
     return HttpResponse(json.dumps(context), content_type="application/json")

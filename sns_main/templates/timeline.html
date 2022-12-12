@@ -2,8 +2,8 @@
 
 {% block content %}
     <div class="container-sm mt-4">
-        <div class="row row-cols-1 g-4">
-            {% if not tag_page %}
+        <div id="main_content" class="row row-cols-1 g-4">
+            {% if page_author %}
                 <div class="col">
                     <div class="card">
                         <div class="card-body">
@@ -157,6 +157,8 @@
             {% endif %}
 
         </div>
+
+        <p id="observer_target"></p>
     </div>
 {% endblock %}
 
@@ -254,5 +256,97 @@
                 }
             );
         });
+
+        {# 무한스크롤 #}
+        const main_list = document.querySelector("#main_content");
+        const csrf = document.querySelector("input[name='csrfmiddlewaretoken']");
+
+        const makeSpinner = () => {
+            const spinner = document.createElement('div');
+            const spinnerSpan = document.createElement('span');
+            spinner.classList.add('col');
+            spinner.classList.add('align-self-center');
+            spinner.classList.add('spinner-border');
+            spinner.setAttribute('role', 'status');
+            spinnerSpan.classList.add('visually-hidden');
+            spinner.appendChild(spinnerSpan);
+            return spinner;
+        };
+        const spinner = makeSpinner();
+
+        const loading_start = () => {
+            main_list.appendChild(spinner);
+        }
+        const loading_finish = () => {
+            main_list.removeChild(spinner);
+        }
+
+        let page = 1;
+        const ioCallback = (entries, io) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    addNewContent();
+                }
+            });
+        };
+
+        function addNewContent() {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'new_content' %}",
+                data: {
+                    'path': "{{ request.path }}",
+                    'data_type': {% if page_author %}"user"{% else %}"tag"{% endif %},
+                    'pk': {% if page_author %}"{{ page_author.id }}"{% else %}"{{ page_tag_id }}"{% endif %},
+                    'page': page + 1,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                dataType: "json",
+                async : false,
+                success: function (response) {
+                    page++;
+                    const data_list = response.data_list
+                    for (let i = 0; i < data_list.length; i++) {
+                        let data = data_list[i]
+                        $("#main_content").append(data);
+                    }
+                    const target_forms = document.getElementsByClassName("new_form_" + page);
+                    for (let i = 0; i < target_forms.length; i++) {
+                        let target_form = target_forms[i]
+                        target_form.appendChild(csrf.cloneNode())
+                    }
+                },
+                error: function (request, status, error) {
+                    console.log(`code: ${request.status} \nmessage: ${request.responseText}\nerror: ${error}`)
+                    console.dir(request)
+                    console.dir(status)
+                    console.dir(error)
+                    console.log(`request: ${request}`);
+                    console.log(`status: ${status}`);
+                    console.log(`error: ${error}`);
+                },
+                beforeSend: function () {
+                    loading_start()
+                    io.unobserve(sentinel);
+                },
+                complete: function () {
+                    loading_finish()
+                    if (parseInt("{{ pages }}") > page) {
+                        io.observe(sentinel);
+                    }
+                }
+            });
+        }
+
+        const sentinel = document.querySelector("#observer_target");
+        const option = {
+            root: null, //viewport
+            rootMargin: "0px",
+            threshold: 1
+        };
+        const io = new IntersectionObserver(ioCallback, option);
+        {% if pages > 1 %}
+            io.observe(sentinel);
+        {% endif %}
     </script>
 {% endblock %}

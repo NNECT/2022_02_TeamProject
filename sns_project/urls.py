@@ -36,4 +36,5 @@ urlpatterns = [
     path('following/', views.user_follow, name='user_follow'),
     path('like/', views.card_like, name='card_like'),
     path('forward/', views.card_forward, name='card_forward'),
+    path('new_content/', views.load_new_content, name='new_content'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
