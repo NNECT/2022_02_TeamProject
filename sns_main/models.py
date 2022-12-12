@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core import validators
 from django.utils.deconstruct import deconstructible
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import re
 
@@ -34,16 +33,19 @@ class User(AbstractUser):
     def __str__(self):
         return self.nickname + ' @' + self.username
 
+    def get_absolute_url(self):
+        return f'/user/{self.username}/'
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=50)
-    slug = models.SlugField(max_length=200, unique=True, allow_unicode=True)
+    # slug = models.SlugField(max_length=200, unique=True, allow_unicode=True)
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
-        return f'/tag/{self.slug}/'
+        return f'/tag/{self.id}/'
 
 
 class MessageCard(models.Model):
@@ -79,7 +81,7 @@ class MessageCard(models.Model):
         addable_tags = []
         for tag in linked_tags:
             try:
-                if Tag.objects.get(slug=slugify(tag, allow_unicode=True)):
+                if Tag.objects.get(name=tag):
                     continue
                 else:
                     addable_tags.append(tag)
@@ -100,7 +102,7 @@ class MessageCard(models.Model):
         linkable_tags = self.get_tags()
         link = {f"@{user.username}": f"<a href='/user/{user.username}/'>@{user.username}</a>" for user in linkable_users}
         link.update(
-            {f"#{tag.name}": f"<a href='/tag/{tag.slug}/'>#{tag.name}</a>" for tag in linkable_tags}
+            {f"#{tag.name}": f"<a href='/tag/{tag.id}/'>#{tag.name}</a>" for tag in linkable_tags}
         )
         text = self.content
         for elm in link:

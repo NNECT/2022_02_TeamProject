@@ -1,5 +1,9 @@
+import json
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.views.generic import View, FormView
 from django.contrib.auth import authenticate, login
 from .forms import *
@@ -48,6 +52,65 @@ class Register(FormView):
         return super().form_valid(form)
 
 
+class ModifyInfo(View):
+    template_name = "modify.html"
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        context = {}
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        context = {
+            "error_return": {
+                "past_password": dict(),
+                "password": dict(),
+                "re_password": dict(),
+                "nickname": dict(),
+            },
+        }
+        chk = True
+        post_data = request.POST.copy()
+        nickname = post_data["nickname"]
+        if nickname == "":
+            post_data["nickname"] = request.user.nickname
+        else:
+            context["error_return"]["nickname"]["value"] = nickname
+        form = UserModifyForm(data=post_data, instance=request.user)
+        if form.is_valid():
+            m = form.save(commit=False)
+
+            past_password = post_data["past_password"]
+            context["error_return"]["past_password"]["value"] = past_password
+            password = post_data["password"]
+            context["error_return"]["password"]["value"] = password
+            re_password = post_data["re_password"]
+            context["error_return"]["re_password"]["value"] = re_password
+
+            if not request.user.check_password(past_password):
+                chk = False
+                context["error_return"]["past_password"]["errors"] = True
+
+            if password == "" and re_password == "":
+                pass
+            elif request.user.check_password(password):
+                chk = False
+                context["error_return"]["password"]["errors"] = True
+            elif password != re_password:
+                chk = False
+                context["error_return"]["re_password"]["errors"] = True
+            else:
+                m.password = make_password(password)
+
+            if chk:
+                m.save()
+                return render(request, self.template_name, context={"success": True})
+        return render(request, self.template_name, context=context)
+
+
 class Timeline(View):
     template_name = "timeline.html"
 
@@ -79,9 +142,10 @@ class Timeline(View):
                 for tag in tags:
                     m.tag.add(tag)
                 for tag in addable_tags:
-                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    t = Tag(name=tag)
+                    t.save()
                     m.tag.add(t)
-                redirect(request.path)
+                return redirect(request.path)
         elif request.POST["form_type"] == "modify_message":
             for _ in [0]:
                 try:
@@ -102,9 +166,10 @@ class Timeline(View):
                     for tag in tags:
                         m.tag.add(tag)
                     for tag in addable_tags:
-                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        t = Tag(name=tag)
+                        t.save()
                         m.tag.add(t)
-                    redirect(request.path)
+                    return redirect(request.path)
         elif request.POST["form_type"] == "delete_message":
             for _ in [0]:
                 try:
@@ -113,7 +178,7 @@ class Timeline(View):
                 except ValueError:
                     break
                 m.delete()
-                redirect(request.path)
+                return redirect(request.path)
         context = {
             "page_author": request.user,
             "message_card_list": MessageCard.objects.filter(
@@ -158,9 +223,10 @@ class TimelineUser(View):
                 for tag in tags:
                     m.tag.add(tag)
                 for tag in addable_tags:
-                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    t = Tag(name=tag)
+                    t.save()
                     m.tag.add(t)
-                redirect(request.path)
+                return redirect(request.path)
         elif request.POST["form_type"] == "modify_message":
             for _ in [0]:
                 try:
@@ -181,9 +247,10 @@ class TimelineUser(View):
                     for tag in tags:
                         m.tag.add(tag)
                     for tag in addable_tags:
-                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        t = Tag(name=tag)
+                        t.save()
                         m.tag.add(t)
-                    redirect(request.path)
+                    return redirect(request.path)
         elif request.POST["form_type"] == "delete_message":
             for _ in [0]:
                 try:
@@ -192,7 +259,7 @@ class TimelineUser(View):
                 except ValueError:
                     break
                 m.delete()
-                redirect(request.path)
+                return redirect(request.path)
         context = {
             "page_author": page_author,
             "message_card_list": MessageCard.objects.filter(
@@ -206,14 +273,15 @@ class TimelineTag(View):
     template_name = "timeline.html"
 
     def get(self, request, *args, **kwargs):
-        tag_slug = kwargs['tag_slug']
+        pk = kwargs['pk']
         context = {
-            "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug),
+            "tag_page": True,
+            "message_card_list": MessageCard.objects.filter(tag__id=pk),
         }
         return render(request, self.template_name, context=context)
 
     def post(self, request, *args, **kwargs):
-        tag_slug = kwargs['tag_slug']
+        pk = kwargs['pk']
         if request.POST["form_type"] == "insert_message":
             form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
             if form.is_valid():
@@ -228,9 +296,10 @@ class TimelineTag(View):
                 for tag in tags:
                     m.tag.add(tag)
                 for tag in addable_tags:
-                    t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                    t = Tag(name=tag)
+                    t.save()
                     m.tag.add(t)
-                redirect(request.path)
+                return redirect(request.path)
         elif request.POST["form_type"] == "modify_message":
             for _ in [0]:
                 try:
@@ -251,9 +320,10 @@ class TimelineTag(View):
                     for tag in tags:
                         m.tag.add(tag)
                     for tag in addable_tags:
-                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        t = Tag(name=tag)
+                        t.save()
                         m.tag.add(t)
-                    redirect(request.path)
+                    return redirect(request.path)
         elif request.POST["form_type"] == "delete_message":
             for _ in [0]:
                 try:
@@ -262,9 +332,10 @@ class TimelineTag(View):
                 except ValueError:
                     break
                 m.delete()
-                redirect(request.path)
+                return redirect(request.path)
         context = {
-            "message_card_list": MessageCard.objects.filter(tag__slug=tag_slug),
+            "tag_page": True,
+            "message_card_list": MessageCard.objects.filter(tag__id=pk),
         }
         return render(request, self.template_name, context=context)
 
@@ -301,25 +372,42 @@ class TimelineDetail(View):
                     for tag in tags:
                         m.tag.add(tag)
                     for tag in addable_tags:
-                        t = Tag(name=tag, slug=slugify(tag, allow_unicode=True)).save()
+                        t = Tag(name=tag)
+                        t.save()
                         m.tag.add(t)
+                    return redirect(request.path)
+            elif request.POST["form_type"] == "delete_message":
+                url = card.author.get_absolute_url()
+                card.delete()
+                return redirect(url)
             elif request.POST["form_type"] == "insert_reply":
-                form = ReplyForm(data=request.POST, files=request.FILES, user=request.user, message=card)
+                form = ReplyForm(data=request.POST, user=request.user, message=card)
                 if form.is_valid():
                     m = form.save(commit=False)
                     m.message = card
                     m.author = request.user
                     m.save()
-            else:
+                    return redirect(request.path)
+            elif request.POST["form_type"] == "modify_reply":
                 for _ in [0]:
                     try:
-                        reply_id = int(request.POST["form_type"])
-                        reply = Reply.objects.get(id=reply_id)
+                        reply_id = int(request.POST["form_id"])
+                        m = Reply.objects.get(id=reply_id)
                     except ValueError:
                         break
-                    form = ReplyForm(data=request.POST, files=request.FILES, user=request.user, message=card, instance=reply)
+                    form = ReplyForm(data=request.POST, user=request.user, message=card, instance=m)
                     if form.is_valid():
-                        m = form.save()
+                        form.save()
+                        return redirect(request.path)
+            elif request.POST["form_type"] == "delete_reply":
+                for _ in [0]:
+                    try:
+                        reply_id = int(request.POST["form_id"])
+                        m = Reply.objects.get(id=reply_id)
+                    except ValueError:
+                        break
+                    m.delete()
+                    return redirect(request.path)
         context = {
             "message_card": MessageCard.objects.get(id=pk),
             "reply_list": Reply.objects.filter(message__id=pk),
@@ -349,3 +437,78 @@ class UserFollowerList(View):
             "follower_user_list": User.objects.filter(follow__id=user.id),
         }
         return render(request, self.template_name, context=context)
+
+
+@login_required
+@require_POST
+def user_follow(request):
+    chk = request.POST.get('chk', None)
+    pk = request.POST.get('pk', None)
+    if chk == "author":
+        target = get_object_or_404(User, id=pk)
+    elif chk == "m":
+        card = get_object_or_404(MessageCard, id=pk)
+        target = card.author
+    elif chk == "r":
+        card = get_object_or_404(Reply, id=pk)
+        target = card.author
+    else:
+        return
+
+    if target in request.user.follow.all():
+        # 좋아요 취소
+        chk = 0
+        request.user.follow.remove(target)
+    else:
+        # 좋아요
+        chk = 1
+        request.user.follow.add(target)
+
+    context = {
+        "followed_chk": chk,
+    }
+    return HttpResponse(json.dumps(context), content_type="application/json")
+
+
+@login_required
+@require_POST
+def card_like(request):
+    pk = request.POST.get('pk', None)
+    card = get_object_or_404(MessageCard, id=pk)
+
+    if request.user in card.like_user.all():
+        # 좋아요 취소
+        chk = 0
+        card.like_user.remove(request.user)
+    else:
+        # 좋아요
+        chk = 1
+        card.like_user.add(request.user)
+
+    context = {
+        "liked_chk": chk,
+        "like_count": card.like_user.all().count(),
+    }
+    return HttpResponse(json.dumps(context), content_type="application/json")
+
+
+@login_required
+@require_POST
+def card_forward(request):
+    pk = request.POST.get('pk', None)
+    card = get_object_or_404(MessageCard, id=pk)
+
+    if request.user in card.forward_user.all():
+        # 리트윗 취소
+        chk = 0
+        card.forward_user.remove(request.user)
+    else:
+        # 리트윗
+        chk = 1
+        card.forward_user.add(request.user)
+
+    context = {
+        "forwarded_chk": chk,
+        "forward_count": card.forward_user.all().count(),
+    }
+    return HttpResponse(json.dumps(context), content_type="application/json")

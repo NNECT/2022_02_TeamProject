@@ -32,7 +32,7 @@
                                 {{ user.nickname }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-sm-end">
-                                <li><a class="dropdown-item" href="#">개인정보 변경</a></li>
+                                <li><a class="dropdown-item" href="{% url 'modify' %}">개인정보 변경</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url "logout" %}">로그아웃</a></li>
                             </ul>

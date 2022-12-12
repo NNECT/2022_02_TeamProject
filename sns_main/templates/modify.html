@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="container my-3">
+        {% if success %}
+            <div class="alert alert-success" role="alert">
+                개인정보가 성공적으로 변경되었습니다.
+            </div>
+        {% endif %}
+        <form method="post" action="{% url 'modify' %}"> {% csrf_token %}
+            <div class="mb-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" name="username" id="username" value="{{ user.username }}" placeholder="Username" readonly>
+                    <label for="username">사용자 ID</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-floating">
+                    <input type="password" class="form-control{% if error_return.past_password.errors %} is-invalid{% endif %}" name="past_password" id="past_password" placeholder="Past Password">
+                    <label for="password">기존 비밀번호</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-floating">
+                    <input type="password" class="form-control{% if error_return.password.errors %} is-invalid{% endif %}" name="password" id="password" value="{{ error_return.password.value|default_if_none:'' }}" placeholder="New Password">
+                    <label for="re_password">새 비밀번호</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-floating">
+                    <input type="password" class="form-control{% if error_return.re_password.errors %} is-invalid{% endif %}" name="re_password" id="re_password" value="{{ error_return.re_password.value|default_if_none:'' }}" placeholder="New Password Check">
+                    <label for="re_password">새 비밀번호 확인</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control{% if error_return.nickname.errors %} is-invalid{% endif %}" name="nickname" id="nickname" value="{{ form.nickname.value|default_if_none:user.nickname }}" placeholder="Nickname">
+                    <label for="username">사용자 닉네임</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">개인정보 변경</button>
+        </form>
+    </div>
+{% endblock %}

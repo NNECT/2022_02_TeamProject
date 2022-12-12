@@ -46,14 +46,10 @@ class RegisterForm(forms.Form):
                     self.add_error('username', '잘못된 id입니다.')
                     chk = False
 
-        try:
-            User.objects.get(nickname=nickname)
-            self.add_error('nickname', '이미 존재하는 닉네임입니다.')
-        except User.DoesNotExist:
-            for letter in str(nickname).lower():
-                if letter == ' ':
-                    self.add_error('nickname', '잘못된 닉네임입니다.')
-                    chk = False
+        for letter in str(nickname).lower():
+            if letter == ' ':
+                self.add_error('nickname', '잘못된 닉네임입니다.')
+                chk = False
 
         if password and re_password:
             if password != re_password:
@@ -67,6 +63,15 @@ class RegisterForm(forms.Form):
                 user.save()
         else:
             self.add_error('password', '잘못된 비밀번호입니다.')
+
+
+class UserModifyForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(UserModifyForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = User
+        fields = ('nickname', )
 
 
 class TimelineForm(forms.ModelForm):

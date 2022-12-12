@@ -3,44 +3,46 @@
 {% block content %}
     <div class="container-sm mt-4">
         <div class="row row-cols-1 g-4">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title" style="display: inline">{{ page_author.nickname }}</h5>
-                        <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=page_author.username %}"> @{{ page_author.username }}</a></small></h6>
-                        {% if user.is_authenticated and user != page_author %}
-                            <span style="float: right"><a href="">
-                                {% if page_author in user.follow.all %}
-                                    <i class="fa-solid fa-heart ms-3 me-1"></i>
-                                {% else %}
-                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
-                                {% endif %}
-                            </a></span>
+            {% if not tag_page %}
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title" style="display: inline">{{ page_author.nickname }}</h5>
+                            <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=page_author.username %}"> @{{ page_author.username }}</a></small></h6>
+                            {% if user.is_authenticated and user != page_author %}
+                                <span style="float: right"><a href="" class="follow_button page_author" id="author_button_{{ page_author.id }}">
+                                    {% if page_author in user.follow.all %}
+                                        <i class="fa-solid fa-heart ms-3 me-1"></i>
+                                    {% else %}
+                                        <i class="fa-regular fa-heart ms-3 me-1"></i>
+                                    {% endif %}
+                                </a></span>
+                            {% endif %}
+                        </div>
+
+            {#            메시지 입력창#}
+                        {% if user.is_authenticated and user.id == page_author.id %}
+                            <div class="card-body">
+                                <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                                    <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
+                                        <input type="radio" class="btn-check" name="form_type" value="insert_message" id="insert_message" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary" for="insert_message">작성</label>
+                                    </div>
+                                    <div class="input-group input-group-sm mb-1">
+                                        <label class="input-group-text" for="form_image">이미지 파일</label>
+                                        <input type="file" class="form-control" name="head_image" id="form_image" accept="image/jpeg, image/png">
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text">메시지 입력</span>
+                                        <textarea class="form-control" name="content" id="form_message" aria-label="With textarea" style="height: 100px"></textarea>
+                                        <button class="btn btn-outline-primary" type="submit">작성</button>
+                                    </div>
+                                </form>
+                            </div>
                         {% endif %}
                     </div>
-
-        {#            메시지 입력창#}
-                    {% if user.is_authenticated and user.id == page_author.id %}
-                        <div class="card-body">
-                            <form action="{{ request.path }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-                                <div class="btn-group d-none" role="group" aria-label="Basic radio toggle button group">
-                                    <input type="radio" class="btn-check" name="form_type" value="insert_message" id="insert_message" autocomplete="off" checked>
-                                    <label class="btn btn-outline-primary" for="insert_message">작성</label>
-                                </div>
-                                <div class="input-group input-group-sm mb-1">
-                                    <label class="input-group-text" for="form_image">이미지 파일</label>
-                                    <input type="file" class="form-control" name="head_image" id="form_image" accept="image/jpeg, image/png">
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-text">메시지 입력</span>
-                                    <textarea class="form-control" name="content" id="form_message" aria-label="With textarea" style="height: 100px"></textarea>
-                                    <button class="btn btn-outline-primary" type="submit">작성</button>
-                                </div>
-                            </form>
-                        </div>
-                    {% endif %}
                 </div>
-            </div>
+            {% endif %}
 
             {% if message_card_list %}
     {#            메시지 출력#}
@@ -54,50 +56,47 @@
                                 <h5 class="card-title" style="display: inline">{{ message_card.author.nickname }}</h5>
                                 <h6 class="card-subtitle" style="display: inline"><small class="text-muted"><a href="{% url "timeline_user" username=message_card.author.username %}"> @{{ message_card.author.username }}</a></small></h6>
                                 {% if user.is_authenticated and user != message_card.author %}
-                                    <span style="float: right"><a href="">
+                                    <span style="float: right"><a href="" class="follow_button" id="follow_button_{{ message_card.id }}">
                                         {% if message_card.author in user.follow.all %}
                                             <i class="fa-solid fa-heart ms-3 me-1"></i>
                                         {% else %}
                                             <i class="fa-regular fa-heart ms-3 me-1"></i>
                                         {% endif %}
                                     </a></span>
+                                {% elif user.is_authenticated and user == message_card.author %}
+                                    <span style="float: right">
+                                        <small class="text-muted" style="word-spacing: 15px">
+                                                <a href="#collapse{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapse{{ message_card.id }}">수정</a>
+                                                <a href="#delete{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="delete{{ message_card.id }}">삭제</a>
+                                        </small>
+                                    </span>
                                 {% endif %}
                                 <p class="card-text"><small class="text-muted">{{ message_card.created_at|date:"Y년 m월 d일 H시 i분" }}</small></p>
                                 <p class="card-text">{{ message_card.linked_text|safe|linebreaksbr }}</p>
                                 <p class="card-text">
-                                    <span style="float: left">
-                                        <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment me-1"></i> {{ message_card.reply_set.count }}</a>
-                                        {% if user.is_authenticated %}
-                                            <a href="">
-                                                {% if uesr in message_card.like_user.all %}
-                                                    <i class="fa-solid fa-heart ms-3 me-1"></i>
-                                                {% else %}
-                                                    <i class="fa-regular fa-heart ms-3 me-1"></i>
-                                                {% endif %}
-                                            </a>
-                                        {% else %}
-                                            <i class="fa-regular fa-heart ms-3 me-1"></i>
-                                        {% endif %} {{ message_card.like_user.all.count }}
-                                        {% if user.is_authenticated %}
-                                            <a href="">
-                                                {% if uesr in message_card.forward_user.all %}
-                                                    <i class="fa-solid fa-share-from-square ms-3 me-1"></i>
-                                                {% else %}
-                                                    <i class="fa-regular fa-share-from-square ms-3 me-1"></i>
-                                                {% endif %}
-                                            </a>
-                                        {% else %}
-                                            <i class="fa-regular fa-share-from-square ms-3 me-1"></i>
-                                        {% endif %} {{ message_card.forward_user.all.count }}
-                                    </span>
-                                    <span style="float: right">
-                                        <small class="text-muted" style="word-spacing: 15px">
-                                            {% if user.is_authenticated and user == message_card.author %}
-                                                <a href="#collapse{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapse{{ message_card.id }}">수정</a>
-                                                <a href="#delete{{ message_card.id }}" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="delete{{ message_card.id }}">삭제</a>
+                                    <a href="{% url "timeline_detail" pk=message_card.id %}"><i class="fa-solid fa-comment me-1"></i> {{ message_card.reply_set.count }}</a>
+                                    {% if user.is_authenticated and user != message_card.author %}
+                                        <a href="" class="like_button" id="like_button_{{ message_card.id }}">
+                                            {% if user in message_card.like_user.all %}
+                                                <i class="fa-solid fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
+                                            {% else %}
+                                                <i class="fa-regular fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
                                             {% endif %}
-                                        </small>
-                                    </span>
+                                        </a>
+                                    {% else %}
+                                        <i class="fa-regular fa-heart ms-3 me-1"></i> {{ message_card.like_user.all.count }}
+                                    {% endif %}
+                                    {% if user.is_authenticated and user != message_card.author %}
+                                        <a href="" class="forward_button" id="forward_button_{{ message_card.id }}">
+                                            {% if user in message_card.forward_user.all %}
+                                                <i class="fa-solid fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
+                                            {% else %}
+                                                <i class="fa-regular fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
+                                            {% endif %}
+                                        </a>
+                                    {% else %}
+                                        <i class="fa-regular fa-share-from-square ms-3 me-1"></i> {{ message_card.forward_user.all.count }}
+                                    {% endif %}
                                 </p>
                             </div>
 
@@ -138,7 +137,7 @@
                                         </div>
                                         <div class="alert alert-danger" role="alert">
                                             정말 삭제할까요?
-                                            <span style="float: right"><a href="" onclick="document.getElementById('delete_form_{{ message_card.id }}').submit();">예</a></span>
+                                            <span style="float: right"><a href="javascript:document.getElementById('delete_form_{{ message_card.id }}').submit();">예</a></span>
                                         </div>
                                     </form>
                                 </div>
@@ -159,4 +158,101 @@
 
         </div>
     </div>
+{% endblock %}
+
+{% block otherscript %}
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript">
+        $(document).on("click", '.follow_button', function () {
+            const id = $(this).attr('id')
+            let chk, pk;
+            if ($(this).hasClass('page_author') === true) {
+                chk = "author";
+            } else {
+                chk = "m";
+            }
+            pk = id.substring(14);
+            $.ajax(
+                {
+                    type: "POST",
+                    url: "{% url 'user_follow' %}",
+                    data: {
+                        'chk': chk,
+                        'pk': pk,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    async : false,
+                    success: function (response) {
+                        let id_text;
+                        if (chk === "author") {
+                            id_text = "#author_button_" + pk;
+                        } else {
+                            id_text = "#follow_button_" + pk;
+                        }
+                        if (response.followed_chk === '1') {
+                            $(id_text).html('<i class="fa-solid fa-heart ms-3 me-1"></i>');
+                        } else {
+                            $(id_text).html('<i class="fa-regular fa-heart ms-3 me-1"></i>');
+                        }
+                    },
+                    error: function (request, status, error) {
+                        window.location.redirect("{% url 'login' %}");
+                    }
+                }
+            );
+        });
+
+        $(document).on("click", '.like_button', function () {
+            const pk = $(this).attr('id').substring(12);
+            $.ajax(
+                {
+                    type: "POST",
+                    url: "{% url 'card_like' %}",
+                    data: {
+                        'pk': pk,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    async : false,
+                    success: function (response) {
+                        if (response.liked_chk === '1') {
+                            $("#like_button_" + pk).html('<i class="fa-solid fa-heart ms-3 me-1"></i> ' + response.like_count);
+                        } else {
+                            $("#like_button_" + pk).html('<i class="fa-regular fa-heart ms-3 me-1"></i> ' + response.like_count);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        window.location.redirect("{% url 'login' %}");
+                    }
+                }
+            );
+        });
+
+        $(document).on("click", '.forward_button', function () {
+            const pk = $(this).attr('id').substring(15);
+            $.ajax(
+                {
+                    type: "POST",
+                    url: "{% url 'card_forward' %}",
+                    data: {
+                        'pk': pk,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    async : false,
+                    success: function (response) {
+                        if (response.forwarded_chk === '1') {
+                            $("#forward_button_" + pk).html('<i class="fa-solid fa-share-from-square ms-3 me-1"></i> ' + response.forward_count);
+                        } else {
+                            $("#forward_button_" + pk).html('<i class="fa-regular fa-share-from-square ms-3 me-1"></i> ' + response.forward_count);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        window.location.redirect("{% url 'login' %}");
+                    }
+                }
+            );
+        });
+    </script>
 {% endblock %}
