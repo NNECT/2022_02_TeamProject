@@ -163,8 +163,15 @@
 {% endblock %}
 
 {% block otherscript %}
-    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script type="text/javascript">
+        {% if feed %}
+            window.addEventListener("load", function () {
+                const active_nav = document.getElementById("nav_feed");
+                active_nav.classList.add("active");
+                active_nav.setAttribute("aria-current", "page");
+            }, false);
+        {% endif %}
+
         $(document).on("click", '.follow_button', function () {
             const id = $(this).attr('id')
             let chk, pk;
@@ -296,7 +303,7 @@
                 url: "{% url 'new_content' %}",
                 data: {
                     'path': "{{ request.path }}",
-                    'data_type': {% if page_author %}"user"{% else %}"tag"{% endif %},
+                    'data_type': {% if feed %}"feed"{% elif page_author %}"user"{% else %}"tag"{% endif %},
                     'pk': {% if page_author %}"{{ page_author.id }}"{% else %}"{{ page_tag_id }}"{% endif %},
                     'page': page + 1,
                     'csrfmiddlewaretoken': '{{ csrf_token }}'

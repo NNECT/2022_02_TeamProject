@@ -1,9 +1,11 @@
 import json
 import math
+import operator
+from functools import reduce
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -195,6 +197,96 @@ class Timeline(View):
         if size > 10:
             data_list = data_list[:10]
         context = {
+            "page_author": request.user,
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
+        }
+        return render(request, self.template_name, context=context)
+
+
+class TimelineFeed(View):
+    template_name = "timeline.html"
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        data_list = MessageCard.objects.filter(
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) | Q(author__in=request.user.follow.all())
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
+        context = {
+            "feed": True,
+            "page_author": request.user,
+            "pages": math.ceil(size / 10),
+            "message_card_list": data_list,
+        }
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.POST["form_type"] == "insert_message":
+            form = TimelineForm(data=request.POST, files=request.FILES, user=request.user)
+            if form.is_valid():
+                m = form.save(commit=False)
+                m.author = request.user
+                m.save()
+                link_users = m.get_link_users()
+                for link_user in link_users:
+                    m.link_user.add(link_user)
+                tags = m.get_tags()
+                addable_tags = m.get_addable_tags()
+                for tag in tags:
+                    m.tag.add(tag)
+                for tag in addable_tags:
+                    t = Tag(name=tag)
+                    t.save()
+                    m.tag.add(t)
+                return redirect(request.path)
+        elif request.POST["form_type"] == "modify_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                form = TimelineForm(data=request.POST, files=request.FILES, user=request.user, instance=m)
+                if form.is_valid():
+                    m = form.save()
+                    m.link_user.clear()
+                    link_users = m.get_link_users()
+                    for link_user in link_users:
+                        m.link_user.add(link_user)
+                    m.tag.clear()
+                    tags = m.get_tags()
+                    addable_tags = m.get_addable_tags()
+                    for tag in tags:
+                        m.tag.add(tag)
+                    for tag in addable_tags:
+                        t = Tag(name=tag)
+                        t.save()
+                        m.tag.add(t)
+                    return redirect(request.path)
+        elif request.POST["form_type"] == "delete_message":
+            for _ in [0]:
+                try:
+                    message_id = int(request.POST["form_id"])
+                    m = MessageCard.objects.get(id=message_id)
+                except ValueError:
+                    break
+                m.delete()
+                return redirect(request.path)
+
+        data_list = MessageCard.objects.filter(
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) | Q(author__in=request.user.follow.all())
+        )
+        size = data_list.count()
+        if size > 10:
+            data_list = data_list[:10]
+        context = {
+            "feed": True,
             "page_author": request.user,
             "pages": math.ceil(size / 10),
             "message_card_list": data_list,
@@ -477,6 +569,86 @@ class UserFollowerList(View):
         return render(request, self.template_name, context=context)
 
 
+class SearchView(View):
+    template_name = "search.html"
+
+    def get(self, request, *args, **kwargs):
+        context = {
+            "before_search": True,
+        }
+        return render(request, self.template_name, context=context)
+
+    def post(self, request, *args, **kwargs):
+        search_type = {"value": request.POST["search_type"]}
+        search_key = {"value": request.POST["search_key"]}
+        context = {
+            "search_type": search_type,
+            "search_key": search_key,
+        }
+        if search_type["value"] == "user":
+            if search_key["value"] == "":
+                context["search_key"]["error"] = True
+            elif len(re.findall(r'[^\w\s\-~ㄱ-ㅎ가-힣ㅏ-ㅣ]', search_key["value"])) > 0:
+                context["search_key"]["error"] = True
+            else:
+                search_keys = [key.strip() for key in search_key["value"].strip().split()]
+                search_text = '+'.join(search_keys)
+                return redirect("search_user", search_key=search_text)
+        elif search_type["value"] == "tag":
+            if search_key["value"] == "":
+                context["search_key"]["error"] = True
+            elif len(re.findall(r'[^\w\s\-~ㄱ-ㅎ가-힣ㅏ-ㅣ]', search_key["value"])) > 0:
+                context["search_key"]["error"] = True
+            else:
+                search_keys = [key.strip() for key in search_key["value"].strip().split()]
+                search_text = '+'.join(search_keys)
+                return redirect("search_tag", search_key=search_text)
+        else:
+            context["search_type"]["error"] = True
+        return render(request, self.template_name, context=context)
+
+
+class SearchUser(View):
+    template_name = "search.html"
+
+    def get(self, request, *args, **kwargs):
+        try:
+            search_keys = kwargs['search_key']
+        except KeyError:
+            return redirect("search")
+        search_keys = [key.strip() for key in search_keys.split("+")]
+        data_list = User.objects.filter(
+            (reduce(operator.and_, (Q(username__contains=key) for key in search_keys))) or
+            (reduce(operator.and_, (Q(nickname__contains=key) for key in search_keys)))
+        )
+        context = {
+            "search_type": {"value": "user"},
+            "search_key": {"value": ' '.join(search_keys)},
+            "user_list": data_list,
+        }
+        return render(request, self.template_name, context=context)
+
+
+class SearchTag(View):
+    template_name = "search.html"
+
+    def get(self, request, *args, **kwargs):
+        try:
+            search_keys = kwargs['search_key']
+        except KeyError:
+            return redirect("search")
+        search_keys = [key.strip() for key in search_keys.split("+")]
+        data_list = Tag.objects.filter(
+            reduce(operator.and_, (Q(name__contains=key) for key in search_keys))
+        ).annotate(m_count=Count("tag_message")).order_by("-m_count")
+        context = {
+            "search_type": {"value": "tag"},
+            "search_key": {"value": ' '.join(search_keys)},
+            "tag_list": data_list,
+        }
+        return render(request, self.template_name, context=context)
+
+
 @login_required
 @require_POST
 def user_follow(request):
@@ -559,7 +731,11 @@ def load_new_content(request):
     pk = request.POST.get('pk', None)
     page = int(request.POST.get('page', None))
 
-    if data_type == "user":
+    if data_type == "feed":
+        message_card_list = MessageCard.objects.filter(
+            Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk) | Q(author__in=User.objects.get(id=pk).follow.all())
+        )
+    elif data_type == "user":
         message_card_list = MessageCard.objects.filter(
             Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk)
         )
