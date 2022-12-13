@@ -211,7 +211,8 @@ class TimelineFeed(View):
         if not request.user.is_authenticated:
             return redirect('login')
         data_list = MessageCard.objects.filter(
-            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) | Q(author__in=request.user.follow.all())
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) |
+            Q(author__in=request.user.follow.all()) | Q(forward_user__in=request.user.follow.all())
         )
         size = data_list.count()
         if size > 10:
@@ -280,7 +281,8 @@ class TimelineFeed(View):
                 return redirect(request.path)
 
         data_list = MessageCard.objects.filter(
-            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) | Q(author__in=request.user.follow.all())
+            Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) |
+            Q(author__in=request.user.follow.all()) | Q(forward_user__in=request.user.follow.all())
         )
         size = data_list.count()
         if size > 10:
@@ -732,8 +734,10 @@ def load_new_content(request):
     page = int(request.POST.get('page', None))
 
     if data_type == "feed":
+        feed_user = User.objects.get(id=pk)
         message_card_list = MessageCard.objects.filter(
-            Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk) | Q(author__in=User.objects.get(id=pk).follow.all())
+            Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk) |
+            Q(author__in=feed_user.follow.all()) | Q(forward_user__in=feed_user.follow.all())
         )
     elif data_type == "user":
         message_card_list = MessageCard.objects.filter(
