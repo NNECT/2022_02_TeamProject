@@ -620,7 +620,7 @@ class SearchUser(View):
             return redirect("search")
         search_keys = [key.strip() for key in search_keys.split("+")]
         data_list = User.objects.filter(
-            (reduce(operator.and_, (Q(username__contains=key) for key in search_keys))) or
+            (reduce(operator.and_, (Q(username__contains=key) for key in search_keys))) |
             (reduce(operator.and_, (Q(nickname__contains=key) for key in search_keys)))
         )
         context = {
