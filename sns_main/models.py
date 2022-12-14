@@ -106,7 +106,10 @@ class MessageCard(models.Model):
         )
         text = self.content
         for elm in link:
-            text = text.replace(elm, link[elm])
+            if elm[0] == "@":
+                text = re.sub(r"(" + elm + r")([^\w\-])", link[elm] + r"\2", text)
+            else:
+                text = re.sub(r"(" + elm + r")([^\w\-~ㄱ-ㅎ가-힣ㅏ-ㅣ])", link[elm] + r"\2", text)
         return text
 
     class Meta:

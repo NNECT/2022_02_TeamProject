@@ -124,7 +124,7 @@ class Timeline(View):
             return redirect('login')
         data_list = MessageCard.objects.filter(
             Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -192,7 +192,7 @@ class Timeline(View):
 
         data_list = MessageCard.objects.filter(
             Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id)
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -213,7 +213,7 @@ class TimelineFeed(View):
         data_list = MessageCard.objects.filter(
             Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) |
             Q(author__in=request.user.follow.all()) | Q(forward_user__in=request.user.follow.all())
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -283,7 +283,7 @@ class TimelineFeed(View):
         data_list = MessageCard.objects.filter(
             Q(author__id=request.user.id) | Q(link_user__id=request.user.id) | Q(forward_user__id=request.user.id) |
             Q(author__in=request.user.follow.all()) | Q(forward_user__in=request.user.follow.all())
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -307,7 +307,7 @@ class TimelineUser(View):
 
         data_list = MessageCard.objects.filter(
             Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -377,7 +377,7 @@ class TimelineUser(View):
 
         data_list = MessageCard.objects.filter(
             Q(author__id=page_author.id) | Q(link_user__id=page_author.id) | Q(forward_user__id=page_author.id)
-        )
+        ).distinct()
         size = data_list.count()
         if size > 10:
             data_list = data_list[:10]
@@ -622,7 +622,7 @@ class SearchUser(View):
         data_list = User.objects.filter(
             (reduce(operator.and_, (Q(username__contains=key) for key in search_keys))) |
             (reduce(operator.and_, (Q(nickname__contains=key) for key in search_keys)))
-        )
+        ).distinct()
         context = {
             "search_type": {"value": "user"},
             "search_key": {"value": ' '.join(search_keys)},
@@ -642,7 +642,7 @@ class SearchTag(View):
         search_keys = [key.strip() for key in search_keys.split("+")]
         data_list = Tag.objects.filter(
             reduce(operator.and_, (Q(name__contains=key) for key in search_keys))
-        ).annotate(m_count=Count("tag_message")).order_by("-m_count")
+        ).distinct().annotate(m_count=Count("tag_message")).order_by("-m_count")
         context = {
             "search_type": {"value": "tag"},
             "search_key": {"value": ' '.join(search_keys)},
@@ -738,11 +738,11 @@ def load_new_content(request):
         message_card_list = MessageCard.objects.filter(
             Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk) |
             Q(author__in=feed_user.follow.all()) | Q(forward_user__in=feed_user.follow.all())
-        )
+        ).distinct()
     elif data_type == "user":
         message_card_list = MessageCard.objects.filter(
             Q(author__id=pk) | Q(link_user__id=pk) | Q(forward_user__id=pk)
-        )
+        ).distinct()
     else:
         message_card_list = MessageCard.objects.filter(tag__id=pk)
 
