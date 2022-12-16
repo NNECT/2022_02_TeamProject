@@ -108,8 +108,10 @@ class MessageCard(models.Model):
         for elm in link:
             if elm[0] == "@":
                 text = re.sub(r"(" + elm + r")([^\w\-])", link[elm] + r"\2", text)
+                text = re.sub(elm + r"$", link[elm], text)
             else:
                 text = re.sub(r"(" + elm + r")([^\w\-~ㄱ-ㅎ가-힣ㅏ-ㅣ])", link[elm] + r"\2", text)
+                text = re.sub(elm + r"$", link[elm], text)
         return text
 
     class Meta:
