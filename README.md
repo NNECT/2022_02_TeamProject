@@ -1,10 +1,11 @@
 SNS톡
 ===
-2022년 가을학기 응용소프트웨어개발 팀 프로젝트
+_2022년 가을학기 응용소프트웨어개발 팀 프로젝트_
 
 ## 개요
 - Django 프레임워크를 통한 타임라인형 웹 SNS 어플리케이션 개발 팀 프로젝트
 - 프레젠테이션 [링크](https://docs.google.com/presentation/d/e/2PACX-1vT6fJxRfYESZRArFGnGvqjwSjzEHDnEJcKLcNNdTYcHVDmL33-oSlBzPKNSiPD2iA/pub?start=false&loop=false&delayms=10000)
+- 시연 영상 [링크](https://drive.google.com/file/d/1Mk3pSkkJLjLD6vY2fekCuW_ll_r715sK/view?usp=sharing)
 
 ## 개발환경
 - Python (3.9)
